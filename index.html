@@ -1072,7 +1072,7 @@
             const scoresElement = document.getElementById('scores');
             const canvas = await html2canvas(scoresElement, { scale: 1.6 });
             const imgData = canvas.toDataURL('image/png');
-            const imgWidth = 175;
+            const imgWidth = 130;
             const imgHeight = (canvas.height * imgWidth) / canvas.width;
             const maxImgHeight = 110;
             const finalImgHeight = imgHeight > maxImgHeight ? maxImgHeight : imgHeight;
