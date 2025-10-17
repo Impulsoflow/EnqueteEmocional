@@ -1,0 +1,1156 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enquete de Bloqueios Emocionais</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #a5f3fc, #06b6d4);
+        }
+        .option {
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .option:hover {
+            transform: scale(1.05);
+            background-color: #fef3c7;
+        }
+        .option.selected {
+            background: linear-gradient(135deg, #34d399, #059669);
+            color: white;
+            border-color: #047857;
+        }
+        .fill {
+            transition: width 1s ease-in-out;
+            position: relative;
+            border-radius: 9999px;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .fill::after {
+            content: attr(data-percent);
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: white;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #3b82f6, #1e40af);
+            animation: pulse 2s infinite;
+        }
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #1e40af, #3b82f6);
+        }
+        .btn-secondary {
+            background: linear-gradient(135deg, #6b7280, #4b5563);
+        }
+        .btn-secondary:hover {
+            background: linear-gradient(135deg, #4b5563, #6b7280);
+        }
+        .btn-result {
+            background: linear-gradient(135deg, #ec4899, #be185d);
+        }
+        .btn-result:hover {
+            background: linear-gradient(135deg, #be185d, #ec4899);
+        }
+        .btn-start {
+            background: linear-gradient(135deg, #22d3ee, #0ea5e9);
+        }
+        .btn-start:hover {
+            background: linear-gradient(135deg, #0ea5e9, #22d3ee);
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        .input-icon {
+            position: relative;
+        }
+        .input-icon svg {
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 20px;
+            height: 20px;
+            color: #4b5563;
+        }
+        .input-icon input {
+            padding-left: 40px;
+        }
+        .signature {
+            font-family: 'Dancing Script', cursive;
+            color: #0ea5e9;
+        }
+        /* Cores das barras */
+        .score-pais .fill { background: #ef4444; }
+        .score-rejeicao .fill { background: #f59e0b; }
+        .score-autoimagem .fill { background: #3b82f6; }
+        .score-depressao .fill { background: #10b981; }
+        .score-culpa .fill { background: #8b5cf6; }
+        .score-criticas .fill { background: #ec4899; }
+        .score-escassez .fill { background: #6b7280; }
+        .score-procrastinacao .fill { background: #f97316; }
+        .score-timidez .fill { background: #10b981; }
+        .score-vitimismo .fill { background: #8b5cf6; }
+        /* Fundos por módulo */
+        .module-pais-bg { background-color: #fee2e2; }
+        .module-rejeicao-bg { background-color: #ffedd5; }
+        .module-autoimagem-bg { background-color: #dbeafe; }
+        .module-depressao-bg { background-color: #d1fae5; }
+        .module-culpa-bg { background-color: #ede9fe; }
+        .module-criticas-bg { background-color: #fce7f3; }
+        .module-escassez-bg { background-color: #f3f4f6; }
+        .module-procrastinacao-bg { background-color: #fff2cc; }
+        .module-timidez-bg { background-color: #d1fae5; }
+        .module-vitimismo-bg { background-color: #ede9fe; }
+        .module-title {
+            font-size: 1.3rem;
+            font-weight: bold;
+            text-align: center;
+            padding: 6px 12px;
+            border-radius: 10px;
+            margin-bottom: 12px;
+            color: white;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+        }
+        .module-pais { background: linear-gradient(135deg, #ef4444, #b91c1c); }
+        .module-rejeicao { background: linear-gradient(135deg, #f59e0b, #b45309); }
+        .module-autoimagem { background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
+        .module-depressao { background: linear-gradient(135deg, #10b981, #047857); }
+        .module-culpa { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
+        .module-criticas { background: linear-gradient(135deg, #ec4899, #be185d); }
+        .module-escassez { background: linear-gradient(135deg, #6b7280, #374151); }
+        .module-procrastinacao { background: linear-gradient(135deg, #f97316, #b45309); }
+        .module-timidez { background: linear-gradient(135deg, #10b981, #047857); }
+        .module-vitimismo { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
+        /* Dicas SUPER VIVAS */
+        .tips-highlight {
+            animation: tipsPulse 2s infinite alternate;
+            box-shadow: 
+                0 0 12px rgba(59, 130, 246, 0.7),
+                0 0 24px rgba(236, 72, 153, 0.5);
+            border: 2px solid #3b82f6;
+            border-radius: 12px;
+        }
+        @keyframes tipsPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.01); }
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&display=swap" rel="stylesheet">
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+    <div class="max-w-3xl w-full bg-white rounded-2xl shadow-xl p-6 sm:p-8">
+        <h2 class="text-3xl sm:text-4xl font-bold text-center text-transparent bg-clip-text bg-gradient-to-r from-teal-500 to-blue-600 mb-2">Impulso Coaching</h2>
+        <h1 class="text-4xl sm:text-5xl font-extrabold text-center text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-teal-500 mb-2">Enquete de Bloqueios Emocionais</h1>
+        <p class="text-center text-gray-600 mb-6">Descubra Possíveis Barreiras Emocionais</p>
+        <div id="form-section">
+            <div class="bg-gradient-to-r from-blue-100 to-teal-100 p-6 rounded-lg mb-6 shadow-md">
+                <p class="text-xl font-semibold text-gray-800 mb-4">Dados Pessoais</p>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+                    <div class="input-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                        <input type="text" id="name" placeholder="Nome" class="border border-teal-300 rounded-lg p-3 w-full focus:outline-none focus:ring-2 focus:ring-teal-500 bg-gradient-to-r from-white to-teal-50">
+                    </div>
+                    <div class="input-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                        <input type="number" id="age" placeholder="Idade" class="border border-teal-300 rounded-lg p-3 w-full focus:outline-none focus:ring-2 focus:ring-teal-500 bg-gradient-to-r from-white to-teal-50">
+                    </div>
+                    <div class="input-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                        <input type="text" id="occupation" placeholder="Profissão" class="border border-teal-300 rounded-lg p-3 w-full focus:outline-none focus:ring-2 focus:ring-teal-500 bg-gradient-to-r from-white to-teal-50">
+                    </div>
+                </div>
+                <div class="input-icon mb-6">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                    <input type="email" id="email" placeholder="Email" class="border border-teal-300 rounded-lg p-3 w-full focus:outline-none focus:ring-2 focus:ring-teal-500 bg-gradient-to-r from-white to-teal-50">
+                </div>
+                <!-- ✨ Dicas vivas -->
+                <div class="tips-highlight bg-gradient-to-r from-blue-100 to-teal-100 p-6 rounded-lg mb-6 shadow-md">
+                    <p class="text-xl font-semibold text-gray-800 mb-4">Dicas para o teste:</p>
+                    <ul class="list-disc list-inside text-gray-700 space-y-2">
+                        <li>Seja sincera(o).</li>
+                        <li>Escolha um momento tranquilo para fazer o teste.</li>
+                        <li>Não pense muito, a primeira resposta geralmente será a mais correta.</li>
+                        <li>Responda pensando em quem você é e não em quem gostaria de ser.</li>
+                    </ul>
+                </div>
+                <div class="flex justify-end">
+                    <button onclick="startTest()" class="btn-start text-white px-6 py-3 rounded-lg transition shadow-md">Iniciar Enquete</button>
+                </div>
+            </div>
+        </div>
+        <div id="test-section" class="hidden">
+            <p class="text-center text-gray-600 mb-4 text-lg">Selecione a opção que melhor descreve sua experiência! (Escolha apenas uma por pergunta)</p>
+            <div id="questions">
+                <!-- === TODAS AS 40 PERGUNTAS COM LAYOUT POR MÓDULO (do 1760585676253.txt) === -->
+                <!-- PAIS DITADORES -->
+                <div class="question active module-pais-bg p-4 rounded-lg shadow-sm" data-q="1">
+                    <div class="module-title module-pais">PAIS DITADORES</div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-2 text-center">01/40</h3>
+                    <p class="text-gray-700 mb-4 text-center">Seu lar, quando criança, era um ambiente seguro?</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-yellow-50"><input type="radio" name="q1" value="0" class="hidden"><label class="block font-medium">(a) Sim.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-yellow-50"><input type="radio" name="q1" value="1" class="hidden"><label class="block font-medium">(b) Sim, mas....</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-yellow-50"><input type="radio" name="q1" value="2" class="hidden"><label class="block font-medium">(c) Às vezes era.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-yellow-50"><input type="radio" name="q1" value="3" class="hidden"><label class="block font-medium">(d) Não.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-yellow-50"><input type="radio" name="q1" value="4" class="hidden"><label class="block font-medium">(e) Não, sofri muito.</label></div>
+                    </div>
+                    <div class="flex justify-end mt-3">
+                        <button onclick="nextQuestion(1)" class="btn-primary text-white px-4 py-2 rounded-lg transition shadow-md">Próxima</button>
+                    </div>
+                </div>
+                <div class="question hidden module-pais-bg p-4 rounded-lg shadow-sm" data-q="2">
+                    <div class="module-title module-pais">PAIS DITADORES</div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-2 text-center">02/40</h3>
+                    <p class="text-gray-700 mb-4 text-center">Seus pais eram autoritários?</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-yellow-50"><input type="radio" name="q2" value="0" class="hidden"><label class="block font-medium">(a) Não.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-yellow-50"><input type="radio" name="q2" value="1" class="hidden"><label class="block font-medium">(b) Raramente.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-yellow-50"><input type="radio" name="q2" value="2" class="hidden"><label class="block font-medium">(c) Aconteceu mais de uma vez.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-yellow-50"><input type="radio" name="q2" value="3" class="hidden"><label class="block font-medium">(d) Sim, mas me afetou.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-yellow-50"><input type="radio" name="q2" value="4" class="hidden"><label class="block font-medium">(e) Sim, e sofro as consequências até hoje.</label></div>
+                    </div>
+                    <div class="flex justify-between mt-3">
+                        <button onclick="prevQuestion(2)" class="btn-secondary text-white px-4 py-2 rounded-lg transition shadow-md">Anterior</button>
+                        <button onclick="nextQuestion(2)" class="btn-primary text-white px-4 py-2 rounded-lg transition shadow-md">Próxima</button>
+                    </div>
+                </div>
+                <div class="question hidden module-pais-bg p-4 rounded-lg shadow-sm" data-q="3">
+                    <div class="module-title module-pais">PAIS DITADORES</div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-2 text-center">03/40</h3>
+                    <p class="text-gray-700 mb-4 text-center">Você se sente pressionado(a) a agradar seus pais?</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-yellow-50"><input type="radio" name="q3" value="0" class="hidden"><label class="block font-medium">(a) Não.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-yellow-50"><input type="radio" name="q3" value="1" class="hidden"><label class="block font-medium">(b) Raramente.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-yellow-50"><input type="radio" name="q3" value="2" class="hidden"><label class="block font-medium">(c) Às vezes.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-yellow-50"><input type="radio" name="q3" value="3" class="hidden"><label class="block font-medium">(d) Frequentemente.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-yellow-50"><input type="radio" name="q3" value="4" class="hidden"><label class="block font-medium">(e) Sempre.</label></div>
+                    </div>
+                    <div class="flex justify-between mt-3">
+                        <button onclick="prevQuestion(3)" class="btn-secondary text-white px-4 py-2 rounded-lg transition shadow-md">Anterior</button>
+                        <button onclick="nextQuestion(3)" class="btn-primary text-white px-4 py-2 rounded-lg transition shadow-md">Próxima</button>
+                    </div>
+                </div>
+                <div class="question hidden module-pais-bg p-4 rounded-lg shadow-sm" data-q="4">
+                    <div class="module-title module-pais">PAIS DITADORES</div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-2 text-center">04/40</h3>
+                    <p class="text-gray-700 mb-4 text-center">Você tem medo de confrontar seus pais?</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-yellow-50"><input type="radio" name="q4" value="0" class="hidden"><label class="block font-medium">(a) Não.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-yellow-50"><input type="radio" name="q4" value="1" class="hidden"><label class="block font-medium">(b) Raramente.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-yellow-50"><input type="radio" name="q4" value="2" class="hidden"><label class="block font-medium">(c) Às vezes.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-yellow-50"><input type="radio" name="q4" value="3" class="hidden"><label class="block font-medium">(d) Frequentemente.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-yellow-50"><input type="radio" name="q4" value="4" class="hidden"><label class="block font-medium">(e) Sempre.</label></div>
+                    </div>
+                    <div class="flex justify-between mt-3">
+                        <button onclick="prevQuestion(4)" class="btn-secondary text-white px-4 py-2 rounded-lg transition shadow-md">Anterior</button>
+                        <button onclick="nextQuestion(4)" class="btn-primary text-white px-4 py-2 rounded-lg transition shadow-md">Próxima</button>
+                    </div>
+                </div>
+                <!-- REJEIÇÃO -->
+                <div class="question hidden module-rejeicao-bg p-4 rounded-lg shadow-sm" data-q="5">
+                    <div class="module-title module-rejeicao">REJEIÇÃO</div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-2 text-center">05/40</h3>
+                    <p class="text-gray-700 mb-4 text-center">Você se sente rejeitado(a) pelos outros?</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-orange-50"><input type="radio" name="q5" value="0" class="hidden"><label class="block font-medium">(a) Não.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-orange-50"><input type="radio" name="q5" value="1" class="hidden"><label class="block font-medium">(b) Raramente.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-orange-50"><input type="radio" name="q5" value="2" class="hidden"><label class="block font-medium">(c) Às vezes.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-orange-50"><input type="radio" name="q5" value="3" class="hidden"><label class="block font-medium">(d) Frequentemente.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-orange-50"><input type="radio" name="q5" value="4" class="hidden"><label class="block font-medium">(e) Sempre.</label></div>
+                    </div>
+                    <div class="flex justify-between mt-3">
+                        <button onclick="prevQuestion(5)" class="btn-secondary text-white px-4 py-2 rounded-lg transition shadow-md">Anterior</button>
+                        <button onclick="nextQuestion(5)" class="btn-primary text-white px-4 py-2 rounded-lg transition shadow-md">Próxima</button>
+                    </div>
+                </div>
+                <div class="question hidden module-rejeicao-bg p-4 rounded-lg shadow-sm" data-q="6">
+                    <div class="module-title module-rejeicao">REJEIÇÃO</div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-2 text-center">06/40</h3>
+                    <p class="text-gray-700 mb-4 text-center">Você tem dificuldade em manter relacionamentos?</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-orange-50"><input type="radio" name="q6" value="0" class="hidden"><label class="block font-medium">(a) Não.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-orange-50"><input type="radio" name="q6" value="1" class="hidden"><label class="block font-medium">(b) Raramente.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-orange-50"><input type="radio" name="q6" value="2" class="hidden"><label class="block font-medium">(c) Às vezes.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-orange-50"><input type="radio" name="q6" value="3" class="hidden"><label class="block font-medium">(d) Frequentemente.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-orange-50"><input type="radio" name="q6" value="4" class="hidden"><label class="block font-medium">(e) Sempre.</label></div>
+                    </div>
+                    <div class="flex justify-between mt-3">
+                        <button onclick="prevQuestion(6)" class="btn-secondary text-white px-4 py-2 rounded-lg transition shadow-md">Anterior</button>
+                        <button onclick="nextQuestion(6)" class="btn-primary text-white px-4 py-2 rounded-lg transition shadow-md">Próxima</button>
+                    </div>
+                </div>
+                <div class="question hidden module-rejeicao-bg p-4 rounded-lg shadow-sm" data-q="7">
+                    <div class="module-title module-rejeicao">REJEIÇÃO</div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-2 text-center">07/40</h3>
+                    <p class="text-gray-700 mb-4 text-center">Você teme ser abandonado(a)?</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-orange-50"><input type="radio" name="q7" value="0" class="hidden"><label class="block font-medium">(a) Não.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-orange-50"><input type="radio" name="q7" value="1" class="hidden"><label class="block font-medium">(b) Raramente.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-orange-50"><input type="radio" name="q7" value="2" class="hidden"><label class="block font-medium">(c) Às vezes.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-orange-50"><input type="radio" name="q7" value="3" class="hidden"><label class="block font-medium">(d) Frequentemente.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-orange-50"><input type="radio" name="q7" value="4" class="hidden"><label class="block font-medium">(e) Sempre.</label></div>
+                    </div>
+                    <div class="flex justify-between mt-3">
+                        <button onclick="prevQuestion(7)" class="btn-secondary text-white px-4 py-2 rounded-lg transition shadow-md">Anterior</button>
+                        <button onclick="nextQuestion(7)" class="btn-primary text-white px-4 py-2 rounded-lg transition shadow-md">Próxima</button>
+                    </div>
+                </div>
+                <div class="question hidden module-rejeicao-bg p-4 rounded-lg shadow-sm" data-q="8">
+                    <div class="module-title module-rejeicao">REJEIÇÃO</div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-2 text-center">08/40</h3>
+                    <p class="text-gray-700 mb-4 text-center">Você se sente indigno(a) de amor?</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-orange-50"><input type="radio" name="q8" value="0" class="hidden"><label class="block font-medium">(a) Não.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-orange-50"><input type="radio" name="q8" value="1" class="hidden"><label class="block font-medium">(b) Raramente.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-orange-50"><input type="radio" name="q8" value="2" class="hidden"><label class="block font-medium">(c) Às vezes.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-orange-50"><input type="radio" name="q8" value="3" class="hidden"><label class="block font-medium">(d) Frequentemente.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-orange-50"><input type="radio" name="q8" value="4" class="hidden"><label class="block font-medium">(e) Sempre.</label></div>
+                    </div>
+                    <div class="flex justify-between mt-3">
+                        <button onclick="prevQuestion(8)" class="btn-secondary text-white px-4 py-2 rounded-lg transition shadow-md">Anterior</button>
+                        <button onclick="nextQuestion(8)" class="btn-primary text-white px-4 py-2 rounded-lg transition shadow-md">Próxima</button>
+                    </div>
+                </div>
+                <!-- AUTOIMAGEM -->
+                <div class="question hidden module-autoimagem-bg p-4 rounded-lg shadow-sm" data-q="9">
+                    <div class="module-title module-autoimagem">AUTOIMAGEM</div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-2 text-center">09/40</h3>
+                    <p class="text-gray-700 mb-4 text-center">Você deixa os outros decidirem por você?</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-blue-50"><input type="radio" name="q9" value="0" class="hidden"><label class="block font-medium">(a) Não.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-blue-50"><input type="radio" name="q9" value="1" class="hidden"><label class="block font-medium">(b) Raramente.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-blue-50"><input type="radio" name="q9" value="2" class="hidden"><label class="block font-medium">(c) Às vezes.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-blue-50"><input type="radio" name="q9" value="3" class="hidden"><label class="block font-medium">(d) Frequentemente.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-blue-50"><input type="radio" name="q9" value="4" class="hidden"><label class="block font-medium">(e) Sempre.</label></div>
+                    </div>
+                    <div class="flex justify-between mt-3">
+                        <button onclick="prevQuestion(9)" class="btn-secondary text-white px-4 py-2 rounded-lg transition shadow-md">Anterior</button>
+                        <button onclick="nextQuestion(9)" class="btn-primary text-white px-4 py-2 rounded-lg transition shadow-md">Próxima</button>
+                    </div>
+                </div>
+                <div class="question hidden module-autoimagem-bg p-4 rounded-lg shadow-sm" data-q="10">
+                    <div class="module-title module-autoimagem">AUTOIMAGEM</div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-2 text-center">10/40</h3>
+                    <p class="text-gray-700 mb-4 text-center">Você duvida do seu próprio valor?</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-blue-50"><input type="radio" name="q10" value="0" class="hidden"><label class="block font-medium">(a) Não.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-blue-50"><input type="radio" name="q10" value="1" class="hidden"><label class="block font-medium">(b) Raramente.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-blue-50"><input type="radio" name="q10" value="2" class="hidden"><label class="block font-medium">(c) Às vezes.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-blue-50"><input type="radio" name="q10" value="3" class="hidden"><label class="block font-medium">(d) Frequentemente.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-blue-50"><input type="radio" name="q10" value="4" class="hidden"><label class="block font-medium">(e) Sempre.</label></div>
+                    </div>
+                    <div class="flex justify-between mt-3">
+                        <button onclick="prevQuestion(10)" class="btn-secondary text-white px-4 py-2 rounded-lg transition shadow-md">Anterior</button>
+                        <button onclick="nextQuestion(10)" class="btn-primary text-white px-4 py-2 rounded-lg transition shadow-md">Próxima</button>
+                    </div>
+                </div>
+                <div class="question hidden module-autoimagem-bg p-4 rounded-lg shadow-sm" data-q="11">
+                    <div class="module-title module-autoimagem">AUTOIMAGEM</div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-2 text-center">11/40</h3>
+                    <p class="text-gray-700 mb-4 text-center">Você se compara com os outros?</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-blue-50"><input type="radio" name="q11" value="0" class="hidden"><label class="block font-medium">(a) Não.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-blue-50"><input type="radio" name="q11" value="1" class="hidden"><label class="block font-medium">(b) Raramente.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-blue-50"><input type="radio" name="q11" value="2" class="hidden"><label class="block font-medium">(c) Às vezes.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-blue-50"><input type="radio" name="q11" value="3" class="hidden"><label class="block font-medium">(d) Frequentemente.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-blue-50"><input type="radio" name="q11" value="4" class="hidden"><label class="block font-medium">(e) Sempre.</label></div>
+                    </div>
+                    <div class="flex justify-between mt-3">
+                        <button onclick="prevQuestion(11)" class="btn-secondary text-white px-4 py-2 rounded-lg transition shadow-md">Anterior</button>
+                        <button onclick="nextQuestion(11)" class="btn-primary text-white px-4 py-2 rounded-lg transition shadow-md">Próxima</button>
+                    </div>
+                </div>
+                <div class="question hidden module-autoimagem-bg p-4 rounded-lg shadow-sm" data-q="12">
+                    <div class="module-title module-autoimagem">AUTOIMAGEM</div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-2 text-center">12/40</h3>
+                    <p class="text-gray-700 mb-4 text-center">Você se sente inadequado(a)?</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-blue-50"><input type="radio" name="q12" value="0" class="hidden"><label class="block font-medium">(a) Não.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-blue-50"><input type="radio" name="q12" value="1" class="hidden"><label class="block font-medium">(b) Raramente.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-blue-50"><input type="radio" name="q12" value="2" class="hidden"><label class="block font-medium">(c) Às vezes.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-blue-50"><input type="radio" name="q12" value="3" class="hidden"><label class="block font-medium">(d) Frequentemente.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-blue-50"><input type="radio" name="q12" value="4" class="hidden"><label class="block font-medium">(e) Sempre.</label></div>
+                    </div>
+                    <div class="flex justify-between mt-3">
+                        <button onclick="prevQuestion(12)" class="btn-secondary text-white px-4 py-2 rounded-lg transition shadow-md">Anterior</button>
+                        <button onclick="nextQuestion(12)" class="btn-primary text-white px-4 py-2 rounded-lg transition shadow-md">Próxima</button>
+                    </div>
+                </div>
+                <!-- DEPRESSÃO E ANSIEDADE -->
+                <div class="question hidden module-depressao-bg p-4 rounded-lg shadow-sm" data-q="13">
+                    <div class="module-title module-depressao">DEPRESSÃO E ANSIEDADE</div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-2 text-center">13/40</h3>
+                    <p class="text-gray-700 mb-4 text-center">Você vive preocupado(a) com o passado?</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-green-50"><input type="radio" name="q13" value="0" class="hidden"><label class="block font-medium">(a) Não.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-green-50"><input type="radio" name="q13" value="1" class="hidden"><label class="block font-medium">(b) Raramente.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-green-50"><input type="radio" name="q13" value="2" class="hidden"><label class="block font-medium">(c) Às vezes.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-green-50"><input type="radio" name="q13" value="3" class="hidden"><label class="block font-medium">(d) Frequentemente.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-green-50"><input type="radio" name="q13" value="4" class="hidden"><label class="block font-medium">(e) Sempre.</label></div>
+                    </div>
+                    <div class="flex justify-between mt-3">
+                        <button onclick="prevQuestion(13)" class="btn-secondary text-white px-4 py-2 rounded-lg transition shadow-md">Anterior</button>
+                        <button onclick="nextQuestion(13)" class="btn-primary text-white px-4 py-2 rounded-lg transition shadow-md">Próxima</button>
+                    </div>
+                </div>
+                <div class="question hidden module-depressao-bg p-4 rounded-lg shadow-sm" data-q="14">
+                    <div class="module-title module-depressao">DEPRESSÃO E ANSIEDADE</div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-2 text-center">14/40</h3>
+                    <p class="text-gray-700 mb-4 text-center">Você tem dificuldade em perdoar?</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-green-50"><input type="radio" name="q14" value="0" class="hidden"><label class="block font-medium">(a) Não.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-green-50"><input type="radio" name="q14" value="1" class="hidden"><label class="block font-medium">(b) Raramente.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-green-50"><input type="radio" name="q14" value="2" class="hidden"><label class="block font-medium">(c) Às vezes.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-green-50"><input type="radio" name="q14" value="3" class="hidden"><label class="block font-medium">(d) Frequentemente.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-green-50"><input type="radio" name="q14" value="4" class="hidden"><label class="block font-medium">(e) Sempre.</label></div>
+                    </div>
+                    <div class="flex justify-between mt-3">
+                        <button onclick="prevQuestion(14)" class="btn-secondary text-white px-4 py-2 rounded-lg transition shadow-md">Anterior</button>
+                        <button onclick="nextQuestion(14)" class="btn-primary text-white px-4 py-2 rounded-lg transition shadow-md">Próxima</button>
+                    </div>
+                </div>
+                <div class="question hidden module-depressao-bg p-4 rounded-lg shadow-sm" data-q="15">
+                    <div class="module-title module-depressao">DEPRESSÃO E ANSIEDADE</div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-2 text-center">15/40</h3>
+                    <p class="text-gray-700 mb-4 text-center">Você se preocupa excessivamente com o futuro?</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-green-50"><input type="radio" name="q15" value="0" class="hidden"><label class="block font-medium">(a) Não.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-green-50"><input type="radio" name="q15" value="1" class="hidden"><label class="block font-medium">(b) Raramente.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-green-50"><input type="radio" name="q15" value="2" class="hidden"><label class="block font-medium">(c) Às vezes.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-green-50"><input type="radio" name="q15" value="3" class="hidden"><label class="block font-medium">(d) Frequentemente.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-green-50"><input type="radio" name="q15" value="4" class="hidden"><label class="block font-medium">(e) Sempre.</label></div>
+                    </div>
+                    <div class="flex justify-between mt-3">
+                        <button onclick="prevQuestion(15)" class="btn-secondary text-white px-4 py-2 rounded-lg transition shadow-md">Anterior</button>
+                        <button onclick="nextQuestion(15)" class="btn-primary text-white px-4 py-2 rounded-lg transition shadow-md">Próxima</button>
+                    </div>
+                </div>
+                <div class="question hidden module-depressao-bg p-4 rounded-lg shadow-sm" data-q="16">
+                    <div class="module-title module-depressao">DEPRESSÃO E ANSIEDADE</div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-2 text-center">16/40</h3>
+                    <p class="text-gray-700 mb-4 text-center">Você se sente ansioso(a) sem motivo aparente?</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-green-50"><input type="radio" name="q16" value="0" class="hidden"><label class="block font-medium">(a) Não.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-green-50"><input type="radio" name="q16" value="1" class="hidden"><label class="block font-medium">(b) Raramente.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-green-50"><input type="radio" name="q16" value="2" class="hidden"><label class="block font-medium">(c) Às vezes.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-green-50"><input type="radio" name="q16" value="3" class="hidden"><label class="block font-medium">(d) Frequentemente.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-green-50"><input type="radio" name="q16" value="4" class="hidden"><label class="block font-medium">(e) Sempre.</label></div>
+                    </div>
+                    <div class="flex justify-between mt-3">
+                        <button onclick="prevQuestion(16)" class="btn-secondary text-white px-4 py-2 rounded-lg transition shadow-md">Anterior</button>
+                        <button onclick="nextQuestion(16)" class="btn-primary text-white px-4 py-2 rounded-lg transition shadow-md">Próxima</button>
+                    </div>
+                </div>
+                <!-- CULPA -->
+                <div class="question hidden module-culpa-bg p-4 rounded-lg shadow-sm" data-q="17">
+                    <div class="module-title module-culpa">CULPA</div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-2 text-center">17/40</h3>
+                    <p class="text-gray-700 mb-4 text-center">Você costuma pegar para si o problema de outros?</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-purple-50"><input type="radio" name="q17" value="0" class="hidden"><label class="block font-medium">(a) Não.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-purple-50"><input type="radio" name="q17" value="1" class="hidden"><label class="block font-medium">(b) Raramente.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-purple-50"><input type="radio" name="q17" value="2" class="hidden"><label class="block font-medium">(c) Às vezes, aconteceu comigo.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-purple-50"><input type="radio" name="q17" value="3" class="hidden"><label class="block font-medium">(d) Habitualmente.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-purple-50"><input type="radio" name="q17" value="4" class="hidden"><label class="block font-medium">(e) Sempre.</label></div>
+                    </div>
+                    <div class="flex justify-between mt-3">
+                        <button onclick="prevQuestion(17)" class="btn-secondary text-white px-4 py-2 rounded-lg transition shadow-md">Anterior</button>
+                        <button onclick="nextQuestion(17)" class="btn-primary text-white px-4 py-2 rounded-lg transition shadow-md">Próxima</button>
+                    </div>
+                </div>
+                <div class="question hidden module-culpa-bg p-4 rounded-lg shadow-sm" data-q="18">
+                    <div class="module-title module-culpa">CULPA</div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-2 text-center">18/40</h3>
+                    <p class="text-gray-700 mb-4 text-center">Você se acha na obrigação de resolver todos os problemas?</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-purple-50"><input type="radio" name="q18" value="0" class="hidden"><label class="block font-medium">(a) Não.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-purple-50"><input type="radio" name="q18" value="1" class="hidden"><label class="block font-medium">(b) Raramente.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-purple-50"><input type="radio" name="q18" value="2" class="hidden"><label class="block font-medium">(c) Às vezes.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-purple-50"><input type="radio" name="q18" value="3" class="hidden"><label class="block font-medium">(d) Habitualmente.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-purple-50"><input type="radio" name="q18" value="4" class="hidden"><label class="block font-medium">(e) Sempre.</label></div>
+                    </div>
+                    <div class="flex justify-between mt-3">
+                        <button onclick="prevQuestion(18)" class="btn-secondary text-white px-4 py-2 rounded-lg transition shadow-md">Anterior</button>
+                        <button onclick="nextQuestion(18)" class="btn-primary text-white px-4 py-2 rounded-lg transition shadow-md">Próxima</button>
+                    </div>
+                </div>
+                <div class="question hidden module-culpa-bg p-4 rounded-lg shadow-sm" data-q="19">
+                    <div class="module-title module-culpa">CULPA</div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-2 text-center">19/40</h3>
+                    <p class="text-gray-700 mb-4 text-center">Você se prejudica para manter a sua palavra?</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-purple-50"><input type="radio" name="q19" value="0" class="hidden"><label class="block font-medium">(a) Não.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-purple-50"><input type="radio" name="q19" value="1" class="hidden"><label class="block font-medium">(b) Raramente.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-purple-50"><input type="radio" name="q19" value="2" class="hidden"><label class="block font-medium">(c) Já aconteceu algumas vezes.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-purple-50"><input type="radio" name="q19" value="3" class="hidden"><label class="block font-medium">(d) Já aconteceu muitas vezes.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-purple-50"><input type="radio" name="q19" value="4" class="hidden"><label class="block font-medium">(e) Sim e isso me prejudica até hoje.</label></div>
+                    </div>
+                    <div class="flex justify-between mt-3">
+                        <button onclick="prevQuestion(19)" class="btn-secondary text-white px-4 py-2 rounded-lg transition shadow-md">Anterior</button>
+                        <button onclick="nextQuestion(19)" class="btn-primary text-white px-4 py-2 rounded-lg transition shadow-md">Próxima</button>
+                    </div>
+                </div>
+                <div class="question hidden module-culpa-bg p-4 rounded-lg shadow-sm" data-q="20">
+                    <div class="module-title module-culpa">CULPA</div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-2 text-center">20/40</h3>
+                    <p class="text-gray-700 mb-4 text-center">Você se sente culpado quando comete algum erro?</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-purple-50"><input type="radio" name="q20" value="0" class="hidden"><label class="block font-medium">(a) Não.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-purple-50"><input type="radio" name="q20" value="1" class="hidden"><label class="block font-medium">(b) Raramente.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-purple-50"><input type="radio" name="q20" value="2" class="hidden"><label class="block font-medium">(c) Às vezes.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-purple-50"><input type="radio" name="q20" value="3" class="hidden"><label class="block font-medium">(d) Habitualmente.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-purple-50"><input type="radio" name="q20" value="4" class="hidden"><label class="block font-medium">(e) Sempre e isso me trava.</label></div>
+                    </div>
+                    <div class="flex justify-between mt-3">
+                        <button onclick="prevQuestion(20)" class="btn-secondary text-white px-4 py-2 rounded-lg transition shadow-md">Anterior</button>
+                        <button onclick="nextQuestion(20)" class="btn-primary text-white px-4 py-2 rounded-lg transition shadow-md">Próxima</button>
+                    </div>
+                </div>
+                <!-- CRÍTICAS -->
+                <div class="question hidden module-criticas-bg p-4 rounded-lg shadow-sm" data-q="21">
+                    <div class="module-title module-criticas">CRÍTICAS</div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-2 text-center">21/40</h3>
+                    <p class="text-gray-700 mb-4 text-center">Você gosta de entrar em discussões?</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-pink-50"><input type="radio" name="q21" value="0" class="hidden"><label class="block font-medium">(a) Não.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-pink-50"><input type="radio" name="q21" value="1" class="hidden"><label class="block font-medium">(b) Raramente.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-pink-50"><input type="radio" name="q21" value="2" class="hidden"><label class="block font-medium">(c) Acontece comigo às vezes.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-pink-50"><input type="radio" name="q21" value="3" class="hidden"><label class="block font-medium">(d) Muitas vezes.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-pink-50"><input type="radio" name="q21" value="4" class="hidden"><label class="block font-medium">(e) Sim, acontece constantemente.</label></div>
+                    </div>
+                    <div class="flex justify-between mt-3">
+                        <button onclick="prevQuestion(21)" class="btn-secondary text-white px-4 py-2 rounded-lg transition shadow-md">Anterior</button>
+                        <button onclick="nextQuestion(21)" class="btn-primary text-white px-4 py-2 rounded-lg transition shadow-md">Próxima</button>
+                    </div>
+                </div>
+                <div class="question hidden module-criticas-bg p-4 rounded-lg shadow-sm" data-q="22">
+                    <div class="module-title module-criticas">CRÍTICAS</div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-2 text-center">22/40</h3>
+                    <p class="text-gray-700 mb-4 text-center">Você gosta de falar dos outros?</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-pink-50"><input type="radio" name="q22" value="0" class="hidden"><label class="block font-medium">(a) Não.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-pink-50"><input type="radio" name="q22" value="1" class="hidden"><label class="block font-medium">(b) Raramente.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-pink-50"><input type="radio" name="q22" value="2" class="hidden"><label class="block font-medium">(c) Só faço críticas construtivas.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-pink-50"><input type="radio" name="q22" value="3" class="hidden"><label class="block font-medium">(d) Muitas vezes não consigo dominar a minha língua.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-pink-50"><input type="radio" name="q22" value="4" class="hidden"><label class="block font-medium">(e) Sim, tenho esse hábito.</label></div>
+                    </div>
+                    <div class="flex justify-between mt-3">
+                        <button onclick="prevQuestion(22)" class="btn-secondary text-white px-4 py-2 rounded-lg transition shadow-md">Anterior</button>
+                        <button onclick="nextQuestion(22)" class="btn-primary text-white px-4 py-2 rounded-lg transition shadow-md">Próxima</button>
+                    </div>
+                </div>
+                <div class="question hidden module-criticas-bg p-4 rounded-lg shadow-sm" data-q="23">
+                    <div class="module-title module-criticas">CRÍTICAS</div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-2 text-center">23/40</h3>
+                    <p class="text-gray-700 mb-4 text-center">Você gosta de fazer críticas?</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-pink-50"><input type="radio" name="q23" value="0" class="hidden"><label class="block font-medium">(a) Não.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-pink-50"><input type="radio" name="q23" value="1" class="hidden"><label class="block font-medium">(b) Raramente.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-pink-50"><input type="radio" name="q23" value="2" class="hidden"><label class="block font-medium">(c) Às vezes.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-pink-50"><input type="radio" name="q23" value="3" class="hidden"><label class="block font-medium">(d) Quase sempre para ajudar as pessoas.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-pink-50"><input type="radio" name="q23" value="4" class="hidden"><label class="block font-medium">(e) Sempre.</label></div>
+                    </div>
+                    <div class="flex justify-between mt-3">
+                        <button onclick="prevQuestion(23)" class="btn-secondary text-white px-4 py-2 rounded-lg transition shadow-md">Anterior</button>
+                        <button onclick="nextQuestion(23)" class="btn-primary text-white px-4 py-2 rounded-lg transition shadow-md">Próxima</button>
+                    </div>
+                </div>
+                <div class="question hidden module-criticas-bg p-4 rounded-lg shadow-sm" data-q="24">
+                    <div class="module-title module-criticas">CRÍTICAS</div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-2 text-center">24/40</h3>
+                    <p class="text-gray-700 mb-4 text-center">Você tem mania de ser perfeccionista?</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-pink-50"><input type="radio" name="q24" value="0" class="hidden"><label class="block font-medium">(a) Não.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-pink-50"><input type="radio" name="q24" value="1" class="hidden"><label class="block font-medium">(b) Raramente.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-pink-50"><input type="radio" name="q24" value="2" class="hidden"><label class="block font-medium">(c) Acontece comigo às vezes.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-pink-50"><input type="radio" name="q24" value="3" class="hidden"><label class="block font-medium">(d) Acontece comigo constantemente.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-pink-50"><input type="radio" name="q24" value="4" class="hidden"><label class="block font-medium">(e) Sim, o tempo todo.</label></div>
+                    </div>
+                    <div class="flex justify-between mt-3">
+                        <button onclick="prevQuestion(24)" class="btn-secondary text-white px-4 py-2 rounded-lg transition shadow-md">Anterior</button>
+                        <button onclick="nextQuestion(24)" class="btn-primary text-white px-4 py-2 rounded-lg transition shadow-md">Próxima</button>
+                    </div>
+                </div>
+                <!-- ESCASSEZ -->
+                <div class="question hidden module-escassez-bg p-4 rounded-lg shadow-sm" data-q="25">
+                    <div class="module-title module-escassez">ESCASSEZ</div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-2 text-center">25/40</h3>
+                    <p class="text-gray-700 mb-4 text-center">Sua família já foi escassa?</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-gray-100"><input type="radio" name="q25" value="0" class="hidden"><label class="block font-medium">(a) Não.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-gray-100"><input type="radio" name="q25" value="1" class="hidden"><label class="block font-medium">(b) Raramente.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-gray-100"><input type="radio" name="q25" value="2" class="hidden"><label class="block font-medium">(c) Às vezes.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-gray-100"><input type="radio" name="q25" value="3" class="hidden"><label class="block font-medium">(d) Aconteceu comigo.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-gray-100"><input type="radio" name="q25" value="4" class="hidden"><label class="block font-medium">(e) Sofro com isso até hoje.</label></div>
+                    </div>
+                    <div class="flex justify-between mt-3">
+                        <button onclick="prevQuestion(25)" class="btn-secondary text-white px-4 py-2 rounded-lg transition shadow-md">Anterior</button>
+                        <button onclick="nextQuestion(25)" class="btn-primary text-white px-4 py-2 rounded-lg transition shadow-md">Próxima</button>
+                    </div>
+                </div>
+                <div class="question hidden module-escassez-bg p-4 rounded-lg shadow-sm" data-q="26">
+                    <div class="module-title module-escassez">ESCASSEZ</div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-2 text-center">26/40</h3>
+                    <p class="text-gray-700 mb-4 text-center">Sua vida é escassa?</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-gray-100"><input type="radio" name="q26" value="0" class="hidden"><label class="block font-medium">(a) Não.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-gray-100"><input type="radio" name="q26" value="1" class="hidden"><label class="block font-medium">(b) Não, mas lembro da escassez na infância.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-gray-100"><input type="radio" name="q26" value="2" class="hidden"><label class="block font-medium">(c) Às vezes.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-gray-100"><input type="radio" name="q26" value="3" class="hidden"><label class="block font-medium">(d) Sim, eu sinto que preciso melhorar.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-gray-100"><input type="radio" name="q26" value="4" class="hidden"><label class="block font-medium">(e) Sim, sofro muito com isso.</label></div>
+                    </div>
+                    <div class="flex justify-between mt-3">
+                        <button onclick="prevQuestion(26)" class="btn-secondary text-white px-4 py-2 rounded-lg transition shadow-md">Anterior</button>
+                        <button onclick="nextQuestion(26)" class="btn-primary text-white px-4 py-2 rounded-lg transition shadow-md">Próxima</button>
+                    </div>
+                </div>
+                <div class="question hidden module-escassez-bg p-4 rounded-lg shadow-sm" data-q="27">
+                    <div class="module-title module-escassez">ESCASSEZ</div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-2 text-center">27/40</h3>
+                    <p class="text-gray-700 mb-4 text-center">Você já foi escasso com outras pessoas?</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-gray-100"><input type="radio" name="q27" value="0" class="hidden"><label class="block font-medium">(a) Não.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-gray-100"><input type="radio" name="q27" value="1" class="hidden"><label class="block font-medium">(b) Raramente isso acontece.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-gray-100"><input type="radio" name="q27" value="2" class="hidden"><label class="block font-medium">(c) Às vezes acontece.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-gray-100"><input type="radio" name="q27" value="3" class="hidden"><label class="block font-medium">(d) Acontece muitas vezes.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-gray-100"><input type="radio" name="q27" value="4" class="hidden"><label class="block font-medium">(e) Sim, tenho essa tendência.</label></div>
+                    </div>
+                    <div class="flex justify-between mt-3">
+                        <button onclick="prevQuestion(27)" class="btn-secondary text-white px-4 py-2 rounded-lg transition shadow-md">Anterior</button>
+                        <button onclick="nextQuestion(27)" class="btn-primary text-white px-4 py-2 rounded-lg transition shadow-md">Próxima</button>
+                    </div>
+                </div>
+                <div class="question hidden module-escassez-bg p-4 rounded-lg shadow-sm" data-q="28">
+                    <div class="module-title module-escassez">ESCASSEZ</div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-2 text-center">28/40</h3>
+                    <p class="text-gray-700 mb-4 text-center">Você tem dinheiro na sua carteira?</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-gray-100"><input type="radio" name="q28" value="0" class="hidden"><label class="block font-medium">(a) Sim, o mês inteiro.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-gray-100"><input type="radio" name="q28" value="1" class="hidden"><label class="block font-medium">(b) Raramente fico sem dinheiro na carteira.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-gray-100"><input type="radio" name="q28" value="2" class="hidden"><label class="block font-medium">(c) Não gosto de andar com dinheiro na carteira.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-gray-100"><input type="radio" name="q28" value="3" class="hidden"><label class="block font-medium">(d) Quase nunca.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-gray-100"><input type="radio" name="q28" value="4" class="hidden"><label class="block font-medium">(e) Nunca tenho.</label></div>
+                    </div>
+                    <div class="flex justify-between mt-3">
+                        <button onclick="prevQuestion(28)" class="btn-secondary text-white px-4 py-2 rounded-lg transition shadow-md">Anterior</button>
+                        <button onclick="nextQuestion(28)" class="btn-primary text-white px-4 py-2 rounded-lg transition shadow-md">Próxima</button>
+                    </div>
+                </div>
+                <!-- PROCRASTINAÇÃO -->
+                <div class="question hidden module-procrastinacao-bg p-4 rounded-lg shadow-sm" data-q="29">
+                    <div class="module-title module-procrastinacao">PROCRASTINAÇÃO</div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-2 text-center">29/40</h3>
+                    <p class="text-gray-700 mb-4 text-center">Com que frequência você usa a frase: "não preciso fazer hoje o que eu posso deixar para amanhã"?</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-yellow-50"><input type="radio" name="q29" value="0" class="hidden"><label class="block font-medium">(a) Nunca.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-yellow-50"><input type="radio" name="q29" value="1" class="hidden"><label class="block font-medium">(b) Raramente.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-yellow-50"><input type="radio" name="q29" value="2" class="hidden"><label class="block font-medium">(c) Penso às vezes.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-yellow-50"><input type="radio" name="q29" value="3" class="hidden"><label class="block font-medium">(d) Com muita frequência.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-yellow-50"><input type="radio" name="q29" value="4" class="hidden"><label class="block font-medium">(e) Sempre e sofro muito com isso.</label></div>
+                    </div>
+                    <div class="flex justify-between mt-3">
+                        <button onclick="prevQuestion(29)" class="btn-secondary text-white px-4 py-2 rounded-lg transition shadow-md">Anterior</button>
+                        <button onclick="nextQuestion(29)" class="btn-primary text-white px-4 py-2 rounded-lg transition shadow-md">Próxima</button>
+                    </div>
+                </div>
+                <div class="question hidden module-procrastinacao-bg p-4 rounded-lg shadow-sm" data-q="30">
+                    <div class="module-title module-procrastinacao">PROCRASTINAÇÃO</div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-2 text-center">30/40</h3>
+                    <p class="text-gray-700 mb-4 text-center">Como você escolhe suas prioridades?</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-yellow-50"><input type="radio" name="q30" value="0" class="hidden"><label class="block font-medium">(a) Pela importância.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-yellow-50"><input type="radio" name="q30" value="1" class="hidden"><label class="block font-medium">(b) Pela urgência.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-yellow-50"><input type="radio" name="q30" value="2" class="hidden"><label class="block font-medium">(c) Pela dificuldade.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-yellow-50"><input type="radio" name="q30" value="3" class="hidden"><label class="block font-medium">(d) Pela facilidade.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-yellow-50"><input type="radio" name="q30" value="4" class="hidden"><label class="block font-medium">(e) Fico ansioso e tenho muita dúvida na hora de escolher.</label></div>
+                    </div>
+                    <div class="flex justify-between mt-3">
+                        <button onclick="prevQuestion(30)" class="btn-secondary text-white px-4 py-2 rounded-lg transition shadow-md">Anterior</button>
+                        <button onclick="nextQuestion(30)" class="btn-primary text-white px-4 py-2 rounded-lg transition shadow-md">Próxima</button>
+                    </div>
+                </div>
+                <div class="question hidden module-procrastinacao-bg p-4 rounded-lg shadow-sm" data-q="31">
+                    <div class="module-title module-procrastinacao">PROCRASTINAÇÃO</div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-2 text-center">31/40</h3>
+                    <p class="text-gray-700 mb-4 text-center">Você costuma cumprir aquilo que fala?</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-yellow-50"><input type="radio" name="q31" value="0" class="hidden"><label class="block font-medium">(a) Sim.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-yellow-50"><input type="radio" name="q31" value="1" class="hidden"><label class="block font-medium">(b) Sempre que possível.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-yellow-50"><input type="radio" name="q31" value="2" class="hidden"><label class="block font-medium">(c) Algumas vezes esqueço.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-yellow-50"><input type="radio" name="q31" value="3" class="hidden"><label class="block font-medium">(d) Não, na maioria das vezes.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-yellow-50"><input type="radio" name="q31" value="4" class="hidden"><label class="block font-medium">(e) Nunca consigo, é uma grande dificuldade para mim.</label></div>
+                    </div>
+                    <div class="flex justify-between mt-3">
+                        <button onclick="prevQuestion(31)" class="btn-secondary text-white px-4 py-2 rounded-lg transition shadow-md">Anterior</button>
+                        <button onclick="nextQuestion(31)" class="btn-primary text-white px-4 py-2 rounded-lg transition shadow-md">Próxima</button>
+                    </div>
+                </div>
+                <div class="question hidden module-procrastinacao-bg p-4 rounded-lg shadow-sm" data-q="32">
+                    <div class="module-title module-procrastinacao">PROCRASTINAÇÃO</div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-2 text-center">32/40</h3>
+                    <p class="text-gray-700 mb-4 text-center">Você costuma cumprir prazos?</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-yellow-50"><input type="radio" name="q32" value="0" class="hidden"><label class="block font-medium">(a) Sim, sempre.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-yellow-50"><input type="radio" name="q32" value="1" class="hidden"><label class="block font-medium">(b) Sempre que possível.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-yellow-50"><input type="radio" name="q32" value="2" class="hidden"><label class="block font-medium">(c) Algumas vezes esqueço.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-yellow-50"><input type="radio" name="q32" value="3" class="hidden"><label class="block font-medium">(d) Não, na maioria das vezes.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-yellow-50"><input type="radio" name="q32" value="4" class="hidden"><label class="block font-medium">(e) Quase nunca consigo.</label></div>
+                    </div>
+                    <div class="flex justify-between mt-3">
+                        <button onclick="prevQuestion(32)" class="btn-secondary text-white px-4 py-2 rounded-lg transition shadow-md">Anterior</button>
+                        <button onclick="nextQuestion(32)" class="btn-primary text-white px-4 py-2 rounded-lg transition shadow-md">Próxima</button>
+                    </div>
+                </div>
+                <!-- TIMIDEZ -->
+                <div class="question hidden module-timidez-bg p-4 rounded-lg shadow-sm" data-q="33">
+                    <div class="module-title module-timidez">TIMIDEZ</div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-2 text-center">33/40</h3>
+                    <p class="text-gray-700 mb-4 text-center">A timidez é um tabu pra você?</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-green-50"><input type="radio" name="q33" value="0" class="hidden"><label class="block font-medium">(a) Não.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-green-50"><input type="radio" name="q33" value="1" class="hidden"><label class="block font-medium">(b) Raramente.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-green-50"><input type="radio" name="q33" value="2" class="hidden"><label class="block font-medium">(c) Às vezes, aconteceu comigo.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-green-50"><input type="radio" name="q33" value="3" class="hidden"><label class="block font-medium">(d) Habitualmente.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-green-50"><input type="radio" name="q33" value="4" class="hidden"><label class="block font-medium">(e) Sempre e isso me trava até hoje.</label></div>
+                    </div>
+                    <div class="flex justify-between mt-3">
+                        <button onclick="prevQuestion(33)" class="btn-secondary text-white px-4 py-2 rounded-lg transition shadow-md">Anterior</button>
+                        <button onclick="nextQuestion(33)" class="btn-primary text-white px-4 py-2 rounded-lg transition shadow-md">Próxima</button>
+                    </div>
+                </div>
+                <div class="question hidden module-timidez-bg p-4 rounded-lg shadow-sm" data-q="34">
+                    <div class="module-title module-timidez">TIMIDEZ</div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-2 text-center">34/40</h3>
+                    <p class="text-gray-700 mb-4 text-center">Você já perdeu oportunidades por ser muito tímido?</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-green-50"><input type="radio" name="q34" value="0" class="hidden"><label class="block font-medium">(a) Não sou tímido.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-green-50"><input type="radio" name="q34" value="1" class="hidden"><label class="block font-medium">(b) Raramente.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-green-50"><input type="radio" name="q34" value="2" class="hidden"><label class="block font-medium">(c) Às vezes, aconteceu comigo.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-green-50"><input type="radio" name="q34" value="3" class="hidden"><label class="block font-medium">(d) Habitualmente.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-green-50"><input type="radio" name="q34" value="4" class="hidden"><label class="block font-medium">(e) Sempre e isso me trava até hoje.</label></div>
+                    </div>
+                    <div class="flex justify-between mt-3">
+                        <button onclick="prevQuestion(34)" class="btn-secondary text-white px-4 py-2 rounded-lg transition shadow-md">Anterior</button>
+                        <button onclick="nextQuestion(34)" class="btn-primary text-white px-4 py-2 rounded-lg transition shadow-md">Próxima</button>
+                    </div>
+                </div>
+                <div class="question hidden module-timidez-bg p-4 rounded-lg shadow-sm" data-q="35">
+                    <div class="module-title module-timidez">TIMIDEZ</div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-2 text-center">35/40</h3>
+                    <p class="text-gray-700 mb-4 text-center">Você se acha uma pessoa introvertida?</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-green-50"><input type="radio" name="q35" value="0" class="hidden"><label class="block font-medium">(a) Não.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-green-50"><input type="radio" name="q35" value="1" class="hidden"><label class="block font-medium">(b) Raramente.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-green-50"><input type="radio" name="q35" value="2" class="hidden"><label class="block font-medium">(c) Algumas vezes.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-green-50"><input type="radio" name="q35" value="3" class="hidden"><label class="block font-medium">(d) Sim. frequentemente.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-green-50"><input type="radio" name="q35" value="4" class="hidden"><label class="block font-medium">(e) Sempre, não me sinto confortável em público.</label></div>
+                    </div>
+                    <div class="flex justify-between mt-3">
+                        <button onclick="prevQuestion(35)" class="btn-secondary text-white px-4 py-2 rounded-lg transition shadow-md">Anterior</button>
+                        <button onclick="nextQuestion(35)" class="btn-primary text-white px-4 py-2 rounded-lg transition shadow-md">Próxima</button>
+                    </div>
+                </div>
+                <div class="question hidden module-timidez-bg p-4 rounded-lg shadow-sm" data-q="36">
+                    <div class="module-title module-timidez">TIMIDEZ</div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-2 text-center">36/40</h3>
+                    <p class="text-gray-700 mb-4 text-center">Você tem dificuldades para tirar fotos e gravar vídeos?</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-green-50"><input type="radio" name="q36" value="0" class="hidden"><label class="block font-medium">(a) Não.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-green-50"><input type="radio" name="q36" value="1" class="hidden"><label class="block font-medium">(b) Raramente.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-green-50"><input type="radio" name="q36" value="2" class="hidden"><label class="block font-medium">(c) Às vezes.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-green-50"><input type="radio" name="q36" value="3" class="hidden"><label class="block font-medium">(d) Habitualmente.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-green-50"><input type="radio" name="q36" value="4" class="hidden"><label class="block font-medium">(e) Sempre.</label></div>
+                    </div>
+                    <div class="flex justify-between mt-3">
+                        <button onclick="prevQuestion(36)" class="btn-secondary text-white px-4 py-2 rounded-lg transition shadow-md">Anterior</button>
+                        <button onclick="nextQuestion(36)" class="btn-primary text-white px-4 py-2 rounded-lg transition shadow-md">Próxima</button>
+                    </div>
+                </div>
+                <!-- VITIMISMO -->
+                <div class="question hidden module-vitimismo-bg p-4 rounded-lg shadow-sm" data-q="37">
+                    <div class="module-title module-vitimismo">VITIMISMO</div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-2 text-center">37/40</h3>
+                    <p class="text-gray-700 mb-4 text-center">Você costuma se achar o patinho feio?</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-purple-50"><input type="radio" name="q37" value="0" class="hidden"><label class="block font-medium">(a) Não.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-purple-50"><input type="radio" name="q37" value="1" class="hidden"><label class="block font-medium">(b) Raramente.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-purple-50"><input type="radio" name="q37" value="2" class="hidden"><label class="block font-medium">(c) Às vezes.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-purple-50"><input type="radio" name="q37" value="3" class="hidden"><label class="block font-medium">(d) Habitualmente.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-purple-50"><input type="radio" name="q37" value="4" class="hidden"><label class="block font-medium">(e) Sempre.</label></div>
+                    </div>
+                    <div class="flex justify-between mt-3">
+                        <button onclick="prevQuestion(37)" class="btn-secondary text-white px-4 py-2 rounded-lg transition shadow-md">Anterior</button>
+                        <button onclick="nextQuestion(37)" class="btn-primary text-white px-4 py-2 rounded-lg transition shadow-md">Próxima</button>
+                    </div>
+                </div>
+                <div class="question hidden module-vitimismo-bg p-4 rounded-lg shadow-sm" data-q="38">
+                    <div class="module-title module-vitimismo">VITIMISMO</div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-2 text-center">38/40</h3>
+                    <p class="text-gray-700 mb-4 text-center">Você se sente culpado por todas as coisas que dão errado?</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-purple-50"><input type="radio" name="q38" value="0" class="hidden"><label class="block font-medium">(a) Não.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-purple-50"><input type="radio" name="q38" value="1" class="hidden"><label class="block font-medium">(b) Raramente.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-purple-50"><input type="radio" name="q38" value="2" class="hidden"><label class="block font-medium">(c) Às vezes.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-purple-50"><input type="radio" name="q38" value="3" class="hidden"><label class="block font-medium">(d) Habitualmente.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-purple-50"><input type="radio" name="q38" value="4" class="hidden"><label class="block font-medium">(e) Sempre.</label></div>
+                    </div>
+                    <div class="flex justify-between mt-3">
+                        <button onclick="prevQuestion(38)" class="btn-secondary text-white px-4 py-2 rounded-lg transition shadow-md">Anterior</button>
+                        <button onclick="nextQuestion(38)" class="btn-primary text-white px-4 py-2 rounded-lg transition shadow-md">Próxima</button>
+                    </div>
+                </div>
+                <div class="question hidden module-vitimismo-bg p-4 rounded-lg shadow-sm" data-q="39">
+                    <div class="module-title module-vitimismo">VITIMISMO</div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-2 text-center">39/40</h3>
+                    <p class="text-gray-700 mb-4 text-center">Você tem necessidade de aprovação?</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-purple-50"><input type="radio" name="q39" value="0" class="hidden"><label class="block font-medium">(a) Não.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-purple-50"><input type="radio" name="q39" value="1" class="hidden"><label class="block font-medium">(b) Raramente.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-purple-50"><input type="radio" name="q39" value="2" class="hidden"><label class="block font-medium">(c) Às vezes.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-purple-50"><input type="radio" name="q39" value="3" class="hidden"><label class="block font-medium">(d) Habitualmente.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-purple-50"><input type="radio" name="q39" value="4" class="hidden"><label class="block font-medium">(e) Sempre.</label></div>
+                    </div>
+                    <div class="flex justify-between mt-3">
+                        <button onclick="prevQuestion(39)" class="btn-secondary text-white px-4 py-2 rounded-lg transition shadow-md">Anterior</button>
+                        <button onclick="nextQuestion(39)" class="btn-primary text-white px-4 py-2 rounded-lg transition shadow-md">Próxima</button>
+                    </div>
+                </div>
+                <div class="question hidden module-vitimismo-bg p-4 rounded-lg shadow-sm" data-q="40">
+                    <div class="module-title module-vitimismo">VITIMISMO</div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-2 text-center">40/40</h3>
+                    <p class="text-gray-700 mb-4 text-center">Você tem problema em confiar em pessoas?</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-purple-50"><input type="radio" name="q40" value="0" class="hidden"><label class="block font-medium">(a) Não.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-purple-50"><input type="radio" name="q40" value="1" class="hidden"><label class="block font-medium">(b) Raramente.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-purple-50"><input type="radio" name="q40" value="2" class="hidden"><label class="block font-medium">(c) Às vezes.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-purple-50"><input type="radio" name="q40" value="3" class="hidden"><label class="block font-medium">(d) Habitualmente.</label></div>
+                        <div class="option border border-gray-300 rounded-lg p-2 text-center cursor-pointer bg-purple-50"><input type="radio" name="q40" value="4" class="hidden"><label class="block font-medium">(e) Sempre.</label></div>
+                    </div>
+                    <div class="flex justify-between mt-3">
+                        <button onclick="prevQuestion(40)" class="btn-secondary text-white px-4 py-2 rounded-lg transition shadow-md">Anterior</button>
+                        <button onclick="showResult()" class="btn-result text-white px-4 py-2 rounded-lg transition shadow-md">Ver Resultado</button>
+                    </div>
+                </div>
+            </div>
+            <!-- RESULTADO -->
+            <div id="result" class="hidden mt-6">
+                <h2 class="text-3xl font-extrabold text-center text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-teal-500 mb-4">Seu Resultado</h2>
+                <!-- ✅ Explicação sobre autoanálise -->
+                <div class="bg-gradient-to-r from-blue-100 to-teal-100 p-6 rounded-lg mb-6 shadow-md">
+                    <p class="text-xl font-semibold text-gray-800 mb-2">Por que entender seus bloqueios emocionais é importante?</p>
+                    <p class="text-gray-700">
+                        Reconhecer seus bloqueios emocionais é o primeiro passo para transformar padrões que limitam sua vida pessoal, 
+                        profissional e relacional. Esses bloqueios, muitas vezes formados na infância, influenciam suas escolhas, 
+                        emoções e comportamentos sem que você perceba. A autoanálise consciente permite identificar essas barreiras 
+                        invisíveis e, a partir daí, trabalhar ativamente para superá-las, promovendo liberdade emocional, bem-estar 
+                        e crescimento pessoal.
+                    </p>
+                </div>
+                <div id="scores" class="space-y-6">
+                    <div class="score-pais">
+                        <p class="text-gray-800 font-semibold text-lg">PAIS DITADORES: <span id="scorePais">0%</span></p>
+                        <div class="bg-gray-200 h-8 rounded-full overflow-hidden shadow-md"><div class="fill h-full" style="width: 0%" data-percent="0%"></div></div>
+                    </div>
+                    <div class="score-rejeicao">
+                        <p class="text-gray-800 font-semibold text-lg">REJEIÇÃO: <span id="scoreRejeicao">0%</span></p>
+                        <div class="bg-gray-200 h-8 rounded-full overflow-hidden shadow-md"><div class="fill h-full" style="width: 0%" data-percent="0%"></div></div>
+                    </div>
+                    <div class="score-autoimagem">
+                        <p class="text-gray-800 font-semibold text-lg">AUTOIMAGEM: <span id="scoreAutoimagem">0%</span></p>
+                        <div class="bg-gray-200 h-8 rounded-full overflow-hidden shadow-md"><div class="fill h-full" style="width: 0%" data-percent="0%"></div></div>
+                    </div>
+                    <div class="score-depressao">
+                        <p class="text-gray-800 font-semibold text-lg">DEPRESSÃO E ANSIEDADE: <span id="scoreDepressao">0%</span></p>
+                        <div class="bg-gray-200 h-8 rounded-full overflow-hidden shadow-md"><div class="fill h-full" style="width: 0%" data-percent="0%"></div></div>
+                    </div>
+                    <div class="score-culpa">
+                        <p class="text-gray-800 font-semibold text-lg">CULPA: <span id="scoreCulpa">0%</span></p>
+                        <div class="bg-gray-200 h-8 rounded-full overflow-hidden shadow-md"><div class="fill h-full" style="width: 0%" data-percent="0%"></div></div>
+                    </div>
+                    <div class="score-criticas">
+                        <p class="text-gray-800 font-semibold text-lg">CRÍTICAS: <span id="scoreCriticas">0%</span></p>
+                        <div class="bg-gray-200 h-8 rounded-full overflow-hidden shadow-md"><div class="fill h-full" style="width: 0%" data-percent="0%"></div></div>
+                    </div>
+                    <div class="score-escassez">
+                        <p class="text-gray-800 font-semibold text-lg">ESCASSEZ: <span id="scoreEscassez">0%</span></p>
+                        <div class="bg-gray-200 h-8 rounded-full overflow-hidden shadow-md"><div class="fill h-full" style="width: 0%" data-percent="0%"></div></div>
+                    </div>
+                    <div class="score-procrastinacao">
+                        <p class="text-gray-800 font-semibold text-lg">PROCRASTINAÇÃO: <span id="scoreProcrastinacao">0%</span></p>
+                        <div class="bg-gray-200 h-8 rounded-full overflow-hidden shadow-md"><div class="fill h-full" style="width: 0%" data-percent="0%"></div></div>
+                    </div>
+                    <div class="score-timidez">
+                        <p class="text-gray-800 font-semibold text-lg">TIMIDEZ: <span id="scoreTimidez">0%</span></p>
+                        <div class="bg-gray-200 h-8 rounded-full overflow-hidden shadow-md"><div class="fill h-full" style="width: 0%" data-percent="0%"></div></div>
+                    </div>
+                    <div class="score-vitimismo">
+                        <p class="text-gray-800 font-semibold text-lg">VITIMISMO: <span id="scoreVitimismo">0%</span></p>
+                        <div class="bg-gray-200 h-8 rounded-full overflow-hidden shadow-md"><div class="fill h-full" style="width: 0%" data-percent="0%"></div></div>
+                    </div>
+                </div>
+                <!-- ✅ Média Total -->
+                <p class="text-4xl font-extrabold text-gray-800 mt-6 text-center shadow-md">
+                    Média Total de Bloqueios Emocionais: <span id="averageScore" class="text-teal-600">0%</span>
+                </p>
+                <div class="bg-gradient-to-r from-blue-100 to-teal-100 p-6 rounded-lg mt-6 shadow-md">
+                    <p class="text-xl font-semibold text-gray-800 mb-2">O que é a Enquete de Bloqueios Emocionais?</p>
+                    <ul class="list-disc list-inside text-gray-700 mt-2">
+                        <li><strong>Pais Ditadores:</strong> Impacto de autoridade parental excessiva e falta de segurança emocional na infância.</li>
+                        <li><strong>Rejeição:</strong> Experiências de abandono social e dificuldade em manter relacionamentos.</li>
+                        <li><strong>Autoimagem:</strong> Influência externa nas decisões e percepção de valor próprio.</li>
+                        <li><strong>Depressão e Ansiedade:</strong> Preocupações excessivas com passado, futuro e dificuldade de perdão.</li>
+                        <li><strong>Culpa:</strong> Tendência a assumir responsabilidade excessiva pelos problemas alheios e autossabotagem.</li>
+                        <li><strong>Críticas:</strong> Tendência a julgar, discutir ou ser perfeccionista.</li>
+                        <li><strong>Escassez:</strong> Medo ou vivência de falta (financeira, emocional, etc.).</li>
+                        <li><strong>Procrastinação:</strong> Dificuldade em iniciar ou concluir tarefas, mesmo com prazos definidos.</li>
+                        <li><strong>Timidez:</strong> Insegurança em ambientes sociais, evitação de exposição e dificuldade em expressar-se.</li>
+                        <li><strong>Vitimismo:</strong> Sentimento de ser vítima constante, atribuição de culpa externa e dificuldade em assumir responsabilidade.</li>
+                    </ul>
+                </div>
+                <p class="text-right mt-6 text-2xl signature">Rogério Braga - impulsoflow@gmail.com</p>
+            </div>
+        </div>
+    </div>
+    <script>
+        let currentQ = 1;
+        const totalQ = 40;
+        function startTest() {
+            const name = document.getElementById('name').value.trim();
+            const age = document.getElementById('age').value.trim();
+            const occupation = document.getElementById('occupation').value.trim();
+            const email = document.getElementById('email').value.trim();
+            if (name && age && occupation && email) {
+                document.getElementById('form-section').classList.add('hidden');
+                document.getElementById('test-section').classList.remove('hidden');
+                updateSelection(1);
+            } else {
+                alert('Por favor, preencha todos os campos antes de iniciar a enquete.');
+            }
+        }
+        function updateSelection(q) {
+            const question = document.querySelector(`[data-q="${q}"]`);
+            const options = question.querySelectorAll('.option');
+            options.forEach(opt => {
+                const radio = opt.querySelector('input');
+                opt.classList.toggle('selected', radio.checked);
+            });
+        }
+        function nextQuestion(q) {
+            if (document.querySelector(`input[name="q${q}"]:checked`)) {
+                document.querySelector(`[data-q="${q}"]`).classList.add('hidden');
+                document.querySelector(`[data-q="${q}"]`).classList.remove('active');
+                currentQ = q + 1;
+                if (currentQ <= totalQ) {
+                    document.querySelector(`[data-q="${currentQ}"]`).classList.remove('hidden');
+                    document.querySelector(`[data-q="${currentQ}"]`).classList.add('active');
+                    updateSelection(currentQ);
+                }
+            } else {
+                alert('Por favor, selecione uma opção antes de continuar.');
+            }
+        }
+        function prevQuestion(q) {
+            document.querySelector(`[data-q="${q}"]`).classList.add('hidden');
+            document.querySelector(`[data-q="${q}"]`).classList.remove('active');
+            currentQ = q - 1;
+            document.querySelector(`[data-q="${currentQ}"]`).classList.remove('hidden');
+            document.querySelector(`[data-q="${currentQ}"]`).classList.add('active');
+            updateSelection(currentQ);
+        }
+        async function showResult() {
+            if (document.querySelector(`input[name="q40"]:checked`)) {
+                let scores = { 
+                    Pais: 0, Rejeicao: 0, Autoimagem: 0, Depressao: 0, Culpa: 0,
+                    Criticas: 0, Escassez: 0, Procrastinacao: 0, Timidez: 0, Vitimismo: 0
+                };
+                const questionMapping = {
+                    1: 'Pais', 2: 'Pais', 3: 'Pais', 4: 'Pais',
+                    5: 'Rejeicao', 6: 'Rejeicao', 7: 'Rejeicao', 8: 'Rejeicao',
+                    9: 'Autoimagem', 10: 'Autoimagem', 11: 'Autoimagem', 12: 'Autoimagem',
+                    13: 'Depressao', 14: 'Depressao', 15: 'Depressao', 16: 'Depressao',
+                    17: 'Culpa', 18: 'Culpa', 19: 'Culpa', 20: 'Culpa',
+                    21: 'Criticas', 22: 'Criticas', 23: 'Criticas', 24: 'Criticas',
+                    25: 'Escassez', 26: 'Escassez', 27: 'Escassez', 28: 'Escassez',
+                    29: 'Procrastinacao', 30: 'Procrastinacao', 31: 'Procrastinacao', 32: 'Procrastinacao',
+                    33: 'Timidez', 34: 'Timidez', 35: 'Timidez', 36: 'Timidez',
+                    37: 'Vitimismo', 38: 'Vitimismo', 39: 'Vitimismo', 40: 'Vitimismo'
+                };
+                const maxScores = { 
+                    Pais: 16, Rejeicao: 16, Autoimagem: 16, Depressao: 16, Culpa: 16,
+                    Criticas: 16, Escassez: 16, Procrastinacao: 16, Timidez: 16, Vitimismo: 16
+                };
+                for (let i = 1; i <= 40; i++) {
+                    const selected = document.querySelector(`input[name="q${i}"]:checked`);
+                    if (selected && questionMapping[i]) {
+                        scores[questionMapping[i]] += parseInt(selected.value);
+                    }
+                }
+                Object.keys(scores).forEach(k => {
+                    scores[k] = Math.round((scores[k] / maxScores[k]) * 100);
+                });
+                // ✅ Média total
+                const totalSum = Object.values(scores).reduce((a, b) => a + b, 0);
+                const averageScore = Math.round(totalSum / 10);
+                // ✅ MOSTRA O RESULTADO NA TELA
+                document.getElementById('questions').classList.add('hidden');
+                document.getElementById('result').classList.remove('hidden');
+                // Atualiza scores
+                document.getElementById('scorePais').textContent = `${scores.Pais}%`;
+                document.getElementById('scoreRejeicao').textContent = `${scores.Rejeicao}%`;
+                document.getElementById('scoreAutoimagem').textContent = `${scores.Autoimagem}%`;
+                document.getElementById('scoreDepressao').textContent = `${scores.Depressao}%`;
+                document.getElementById('scoreCulpa').textContent = `${scores.Culpa}%`;
+                document.getElementById('scoreCriticas').textContent = `${scores.Criticas}%`;
+                document.getElementById('scoreEscassez').textContent = `${scores.Escassez}%`;
+                document.getElementById('scoreProcrastinacao').textContent = `${scores.Procrastinacao}%`;
+                document.getElementById('scoreTimidez').textContent = `${scores.Timidez}%`;
+                document.getElementById('scoreVitimismo').textContent = `${scores.Vitimismo}%`;
+                // Atualiza barras
+                document.querySelector('.score-pais .fill').style.width = `${scores.Pais}%`;
+                document.querySelector('.score-pais .fill').setAttribute('data-percent', `${scores.Pais}%`);
+                document.querySelector('.score-rejeicao .fill').style.width = `${scores.Rejeicao}%`;
+                document.querySelector('.score-rejeicao .fill').setAttribute('data-percent', `${scores.Rejeicao}%`);
+                document.querySelector('.score-autoimagem .fill').style.width = `${scores.Autoimagem}%`;
+                document.querySelector('.score-autoimagem .fill').setAttribute('data-percent', `${scores.Autoimagem}%`);
+                document.querySelector('.score-depressao .fill').style.width = `${scores.Depressao}%`;
+                document.querySelector('.score-depressao .fill').setAttribute('data-percent', `${scores.Depressao}%`);
+                document.querySelector('.score-culpa .fill').style.width = `${scores.Culpa}%`;
+                document.querySelector('.score-culpa .fill').setAttribute('data-percent', `${scores.Culpa}%`);
+                document.querySelector('.score-criticas .fill').style.width = `${scores.Criticas}%`;
+                document.querySelector('.score-criticas .fill').setAttribute('data-percent', `${scores.Criticas}%`);
+                document.querySelector('.score-escassez .fill').style.width = `${scores.Escassez}%`;
+                document.querySelector('.score-escassez .fill').setAttribute('data-percent', `${scores.Escassez}%`);
+                document.querySelector('.score-procrastinacao .fill').style.width = `${scores.Procrastinacao}%`;
+                document.querySelector('.score-procrastinacao .fill').setAttribute('data-percent', `${scores.Procrastinacao}%`);
+                document.querySelector('.score-timidez .fill').style.width = `${scores.Timidez}%`;
+                document.querySelector('.score-timidez .fill').setAttribute('data-percent', `${scores.Timidez}%`);
+                document.querySelector('.score-vitimismo .fill').style.width = `${scores.Vitimismo}%`;
+                document.querySelector('.score-vitimismo .fill').setAttribute('data-percent', `${scores.Vitimismo}%`);
+                // Atualiza média
+                document.getElementById('averageScore').textContent = `${averageScore}%`;
+                // ✅ GERA PDF E ABRE E-MAIL (ATUALIZADO)
+                await generateAndSendPDF(scores, averageScore);
+            } else {
+                alert('Por favor, responda a última pergunta antes de ver o resultado.');
+            }
+        }
+        async function generateAndSendPDF(scores, averageScore) {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('p', 'mm', 'a4');
+            const pageWidth = 210;
+            let y = 10;
+            const name = document.getElementById('name').value.trim();
+            const age = document.getElementById('age').value.trim();
+            const occupation = document.getElementById('occupation').value.trim();
+            const email = document.getElementById('email').value.trim();
+            // Cabeçalho
+            doc.setFontSize(16);
+            doc.text('Enquete de Bloqueios Emocionais - Impulso Coaching', pageWidth / 2, y, { align: 'center' });
+            y += 10;
+            doc.setFontSize(10);
+            doc.text(`Nome: ${name}, Idade: ${age}, Profissão: ${occupation}, Email: ${email}`, pageWidth / 2, y, { align: 'center', maxWidth: 180 });
+            y += 12;
+            // Explicação sobre autoanálise
+            doc.setFontSize(12);
+            doc.text('Por que entender seus bloqueios emocionais é importante?', pageWidth / 2, y, { align: 'center' });
+            y += 8;
+            doc.setFontSize(9);
+            const text = "Reconhecer seus bloqueios emocionais é o primeiro passo para transformar padrões que limitam sua vida pessoal, profissional e relacional. Esses bloqueios, muitas vezes formados na infância, influenciam suas escolhas, emoções e comportamentos sem que você perceba. A autoanálise consciente permite identificar essas barreiras invisíveis e, a partir daí, trabalhar ativamente para superá-las, promovendo liberdade emocional, bem-estar e crescimento pessoal.";
+            doc.text(text, 20, y, { maxWidth: 170, lineHeightFactor: 1.8 });
+            y += 20;
+            // Captura o gráfico via html2canvas (reduzido)
+            const scoresElement = document.getElementById('scores');
+            const canvas = await html2canvas(scoresElement, { scale: 1.6 });
+            const imgData = canvas.toDataURL('image/png');
+            const imgWidth = 175;
+            const imgHeight = (canvas.height * imgWidth) / canvas.width;
+            const maxImgHeight = 110;
+            const finalImgHeight = imgHeight > maxImgHeight ? maxImgHeight : imgHeight;
+            doc.addImage(imgData, 'PNG', (pageWidth - imgWidth) / 2, y, imgWidth, finalImgHeight);
+            y += finalImgHeight + 12;
+            // Média total
+            doc.setFontSize(14);
+            doc.setFont('helvetica', 'bold');
+            doc.text(`Média Total de Bloqueios Emocionais: ${averageScore}%`, pageWidth / 2, y, { align: 'center' });
+            y += 14;
+            // Descrição COMPLETA dos módulos — IGUAL à exibida no HTML
+            doc.setFontSize(10);
+            doc.text('O que é a Enquete de Bloqueios Emocionais?', pageWidth / 2, y, { align: 'center' });
+            y += 8;
+            doc.setFontSize(9);
+            const items = [
+                '• Pais Ditadores: Impacto de autoridade parental excessiva e falta de segurança emocional na infância.',
+                '• Rejeição: Experiências de abandono social e dificuldade em manter relacionamentos.',
+                '• Autoimagem: Influência externa nas decisões e percepção de valor próprio.',
+                '• Depressão e Ansiedade: Preocupações excessivas com passado, futuro e dificuldade de perdão.',
+                '• Culpa: Tendência a assumir responsabilidade excessiva pelos problemas alheios e autossabotagem.',
+                '• Críticas: Tendência a julgar, discutir ou ser perfeccionista.',
+                '• Escassez: Medo ou vivência de falta (financeira, emocional, etc.).',
+                '• Procrastinação: Dificuldade em iniciar ou concluir tarefas, mesmo com prazos definidos.',
+                '• Timidez: Insegurança em ambientes sociais, evitação de exposição e dificuldade em expressar-se.',
+                '• Vitimismo: Sentimento de ser vítima constante, atribuição de culpa externa e dificuldade em assumir responsabilidade.'
+            ];
+            items.forEach(item => {
+                doc.text(item, 18, y, { maxWidth: 175 });
+                y += 7;
+            });
+            y += 10;
+            doc.setFontSize(10);
+            doc.text('Rogério Braga - impulsoflow@gmail.com', pageWidth - 20, 290, { align: 'right' });
+            const pdfName = `resultado_enquete_bloqueios_emocionais_${name.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '')}.pdf`;
+            doc.save(pdfName);
+            // E-mail
+            const mailtoSubject = encodeURIComponent(`Resultado da Enquete de Bloqueios Emocionais - ${name}`);
+            const mailtoBody = encodeURIComponent(
+                `Nome: ${name}
+Idade: ${age}
+Profissão: ${occupation}
+E-mail: ${email}
+
+Resultados:
+Pais Ditadores: ${scores.Pais}%
+Rejeição: ${scores.Rejeicao}%
+Autoimagem: ${scores.Autoimagem}%
+Depressão e Ansiedade: ${scores.Depressao}%
+Culpa: ${scores.Culpa}%
+Críticas: ${scores.Criticas}%
+Escassez: ${scores.Escassez}%
+Procrastinação: ${scores.Procrastinacao}%
+Timidez: ${scores.Timidez}%
+Vitimismo: ${scores.Vitimismo}%
+
+Média Total de Bloqueios Emocionais: ${averageScore}%
+
+O PDF "${pdfName}" foi salvo. Por favor, anexe-o ao e-mail e envie.`
+            );
+            window.location.href = `mailto:impulsoflow@gmail.com?subject=${mailtoSubject}&body=${mailtoBody}`;
+            setTimeout(() => {
+                alert(`✅ Enquete finalizada!
+📄 O PDF foi salvo.
+✉️ Um e-mail foi aberto — basta anexar o PDF e enviar!`);
+            }, 500);
+        }
+        document.querySelectorAll('.option').forEach(opt => {
+            opt.addEventListener('click', (e) => {
+                const radio = opt.querySelector('input');
+                if (radio) {
+                    radio.checked = true;
+                    const qNum = parseInt(radio.name.match(/\d+/)[0]);
+                    updateSelection(qNum);
+                }
+            });
+        });
+        updateSelection(1);
+    </script>
+</body>
+</html>
